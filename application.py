@@ -122,21 +122,46 @@ def search():
 # =========================
 # BOOK PAGE
 # =========================
-@app.route("/book/<isbn>")
+@app.route("/book/<isbn>", methods=["GET", "POST"])
 def book(isbn):
 
-    if not session.get("user_id"):
+    if "user_id" not in session:
         return redirect("/login")
 
-    book = db.execute(
-        text("SELECT * FROM books WHERE isbn = :isbn"),
-        {"isbn": isbn}
-    ).fetchone()
+    # If user submits a review
+    if request.method == "POST":
 
-    if book is None:
-        return "Book not found"
+        rating = request.form.get("rating")
+        review = request.form.get("review")
 
-    return render_template("book.html", book=book)
+        db.execute(text("""
+            INSERT INTO reviews (user_id, isbn, rating, review)
+            VALUES (:user_id, :isbn, :rating, :review)
+        """), {
+            "user_id": session["user_id"],
+            "isbn": isbn,
+            "rating": rating,
+            "review": review
+        })
+
+        db.commit()
+
+        return redirect(f"/book/{isbn}")
+
+    # Get book info
+    book = db.execute(text("""
+        SELECT * FROM books WHERE isbn = :isbn
+    """), {"isbn": isbn}).fetchone()
+
+    # Get reviews
+    reviews = db.execute(text("""
+        SELECT users.username, reviews.rating, reviews.review
+        FROM reviews
+        JOIN users ON users.id = reviews.user_id
+        WHERE isbn = :isbn
+    """), {"isbn": isbn}).fetchall()
+
+    return render_template("book.html", book=book, reviews=reviews)
 
 # =========================
 # ADD REVIEW
