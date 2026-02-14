@@ -1,9 +1,9 @@
 import os
-
-from flask import Flask, session
+from flask import Flask, session, request, redirect, render_template
 from flask_session import Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -20,7 +20,80 @@ Session(app)
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
+# Create users table if not exists
+db.execute(text("""
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR UNIQUE NOT NULL,
+    password VARCHAR NOT NULL
+);
+"""))
+db.commit()
+
 
 @app.route("/")
 def index():
     return "Project 1: TODO"
+
+
+# =========================
+# REGISTER
+# =========================
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if not username or not password:
+            return "Missing username or password"
+
+        hash_pw = generate_password_hash(password)
+
+        try:
+            db.execute(
+                text("INSERT INTO users (username, password) VALUES (:u, :p)"),
+                {"u": username, "p": hash_pw}
+            )
+            db.commit()
+        except:
+            return "Username already exists"
+
+        return redirect("/login")
+
+    return "Register Page"
+
+
+# =========================
+# LOGIN
+# =========================
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        user = db.execute(
+            text("SELECT * FROM users WHERE username = :u"),
+            {"u": username}
+        ).fetchone()
+
+        if user and check_password_hash(user.password, password):
+            session["user_id"] = user.id
+            return redirect("/")
+
+        return "Invalid login"
+
+    return "Login Page"
+
+
+# =========================
+# LOGOUT
+# =========================
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
