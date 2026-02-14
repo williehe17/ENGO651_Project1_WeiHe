@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS users (
 """))
 db.commit()
 
-
 @app.route("/")
 def index():
 
@@ -39,8 +38,6 @@ def index():
         return redirect("/login")
 
     return "Project 1: TODO"
-
-
 
 # =========================
 # REGISTER
@@ -70,8 +67,6 @@ def register():
 
     return render_template("register.html")
 
-
-
 # =========================
 # LOGIN
 # =========================
@@ -94,6 +89,17 @@ def login():
         return "Invalid login"
 
     return render_template("login.html")
+
+# ====================
+# SEARCH PAGE
+# ====================
+@app.route("/search", methods=["GET"])
+def search():
+
+    if not session.get("user_id"):
+        return redirect("/login")
+
+    return "Search Page"
 
 
 # =========================
