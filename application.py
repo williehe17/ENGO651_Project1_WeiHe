@@ -100,10 +100,23 @@ def search():
         return redirect("/login")
 
     if request.method == "POST":
-        return "Search Results Coming Soon"
+
+        query = request.form.get("query")
+
+        results = db.execute(
+            text("""
+                SELECT * FROM books
+                WHERE isbn ILIKE :q
+                OR title ILIKE :q
+                OR author ILIKE :q
+                LIMIT 20
+            """),
+            {"q": f"%{query}%"}
+        ).fetchall()
+
+        return render_template("search.html", books=results)
 
     return render_template("search.html")
-
 
 # =========================
 # LOGOUT
