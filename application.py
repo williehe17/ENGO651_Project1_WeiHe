@@ -89,7 +89,7 @@ def login():
 
         if user and check_password_hash(user.password, password):
             session["user_id"] = user.id
-            return redirect("/")
+            return redirect("/search")
 
         return "Invalid login"
 
