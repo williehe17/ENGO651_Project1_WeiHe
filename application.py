@@ -118,6 +118,28 @@ def search():
 
     return render_template("search.html")
 
+
+# =========================
+# BOOK PAGE
+# =========================
+@app.route("/book/<isbn>")
+def book(isbn):
+
+    if not session.get("user_id"):
+        return redirect("/login")
+
+    book = db.execute(
+        text("SELECT * FROM books WHERE isbn = :isbn"),
+        {"isbn": isbn}
+    ).fetchone()
+
+    if book is None:
+        return "Book not found"
+
+    return render_template("book.html", book=book)
+
+
+
 # =========================
 # LOGOUT
 # =========================
