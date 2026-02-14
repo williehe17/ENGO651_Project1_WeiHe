@@ -23,6 +23,18 @@ CREATE TABLE IF NOT EXISTS books (
 );
 """))
 
+# Create reviews table
+db.execute(text("""
+CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    isbn VARCHAR NOT NULL,
+    rating INTEGER NOT NULL,
+    review TEXT
+)
+"""))
+
+
 # Read CSV and insert rows
 with open("books.csv", newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f)
