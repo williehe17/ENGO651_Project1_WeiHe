@@ -134,6 +134,18 @@ def book(isbn):
         rating = request.form.get("rating")
         review = request.form.get("review")
 
+        # Prevent users from submitting more than one review per book
+        existing = db.execute(text("""
+            SELECT * FROM reviews
+            WHERE user_id = :uid AND isbn = :isbn
+        """), {
+            "uid": session["user_id"],
+            "isbn": isbn
+        }).fetchone()
+
+        if existing:
+            return "You already reviewed this book"
+
         db.execute(text("""
             INSERT INTO reviews (user_id, isbn, rating, review)
             VALUES (:user_id, :isbn, :rating, :review)
