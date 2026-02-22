@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, session, request, redirect, render_template
+from flask import Flask, session, request, redirect, render_template, jsonify
 from flask_session import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -284,4 +284,102 @@ def review():
 def logout():
     session.clear()
     return redirect("/")
+
+@app.route("/api/<isbn>")
+def book_api(isbn):
+
+    # -------------------------
+    # Get book from database
+    # -------------------------
+    book = db.execute(text("""
+        SELECT * FROM books WHERE isbn = :isbn
+    """), {"isbn": isbn}).fetchone()
+
+    if not book:
+        return jsonify({"error": "Book not found"}), 404
+
+    # -------------------------
+    # Get review stats
+    # -------------------------
+    stats = db.execute(text("""
+        SELECT COUNT(*) AS reviewCount,
+               AVG(rating) AS averageRating
+        FROM reviews
+        WHERE isbn = :isbn
+    """), {"isbn": isbn}).fetchone()
+
+    review_count = stats.reviewcount if stats.reviewcount else 0
+    average_rating = float(stats.averagerating) if stats.averagerating else None
+
+    # -------------------------
+    # Google Books API
+    # -------------------------
+    description = None
+    isbn10 = None
+    isbn13 = None
+
+    try:
+        google_res = requests.get(
+            "https://www.googleapis.com/books/v1/volumes",
+            params={"q": f"isbn:{isbn}"}
+        )
+
+        if google_res.status_code == 200:
+            data = google_res.json()
+
+            if data.get("items"):
+                info = data["items"][0]["volumeInfo"]
+
+                description = info.get("description")
+
+                for i in info.get("industryIdentifiers", []):
+                    if i["type"] == "ISBN_10":
+                        isbn10 = i["identifier"]
+                    if i["type"] == "ISBN_13":
+                        isbn13 = i["identifier"]
+
+    except Exception as e:
+        print("Google API error:", e)
+
+    # -------------------------
+    # Gemini summary
+    # -------------------------
+    summary = None
+
+    if description:
+        api_key = os.getenv("GEMINI_API_KEY")
+
+        try:
+            gemini_response = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
+                headers={"Content-Type": "application/json"},
+                json={
+                    "contents": [{
+                        "parts": [{
+                            "text": f"Summarize this text in less than 50 words:\n{description}"
+                        }]
+                    }]
+                }
+            )
+
+            if gemini_response.status_code == 200:
+                gemini_data = gemini_response.json()
+                summary = gemini_data["candidates"][0]["content"]["parts"][0]["text"]
+
+        except Exception as e:
+            print("Gemini error:", e)
+
+    # -------------------------
+    # Return JSON
+    # -------------------------
+    return jsonify({
+        "title": book.title,
+        "author": book.author,
+        "publishedDate": book.year,
+        "ISBN_10": isbn10,
+        "ISBN_13": isbn13,
+        "reviewCount": review_count,
+        "averageRating": average_rating,
+        "summarizedDescription": summary
+    })
 
