@@ -1,4 +1,4 @@
-# Book Review Website – Project 1 (ENGO 651)
+# Book Review Website – Project 1-2 (ENGO 651)
 
 ## Overview
 
@@ -11,6 +11,10 @@ Users can:
 * View individual book pages
 * Submit ratings and written reviews
 * See reviews from other users
+* View AI-generated summaries for books
+* Access a JSON API endpoint for book data
+
+The application also integrates Google Books API for additional metadata and Gemini AI for automatic text summarization.
 
 ---
 
@@ -18,7 +22,7 @@ Users can:
 
 ### application.py
 
-Main Flask application file that manages routing, authentication, session handling, searching, book pages, and review submission.
+Main Flask application file that manages routing, authentication, session handling, searching, book pages, review submission, external API integration, and JSON API responses.
 
 ### import.py
 
@@ -26,9 +30,7 @@ Script used to create database tables and import book data from `books.csv` into
 
 Run with:
 
-```
 python import.py
-```
 
 ### Templates/
 
@@ -53,11 +55,11 @@ Python dependencies required to run the project.
 
 Tables used:
 
-* **users** – stores usernames and hashed passwords
-* **books** – stores book information
-* **reviews** – stores ratings and written reviews linked to users and books
+* users – stores usernames and hashed passwords
+* books – stores book information
+* reviews – stores ratings and written reviews linked to users and books
 
-SQL queries are executed using SQLAlchemy’s `execute()` method.
+SQL queries are executed using SQLAlchemy’s execute() method.
 
 ---
 
@@ -65,36 +67,30 @@ SQL queries are executed using SQLAlchemy’s `execute()` method.
 
 Install dependencies:
 
-```
 pip install -r requirements.txt
-```
 
 Set database environment variable (PowerShell example):
 
-```
 $env:DATABASE_URL="postgresql://postgres:<password>@localhost/<dbname>"
-```
+
+Set Gemini API key:
+
+$env:GEMINI_API_KEY="<your_api_key>"
 
 Import book data:
 
-```
 python import.py
-```
 
 Run the application:
 
-```
 python -m flask --app application run
-```
 
 Open in browser:
 
-```
 http://127.0.0.1:5000
-```
 
 ---
 
 ## Notes
 
-This application demonstrates user authentication, database integration, dynamic searching, and review functionality built with Flask and PostgreSQL.
+This application demonstrates user authentication, database integration, dynamic searching, external API usage, AI-powered text summarization, and JSON API functionality built with Flask and PostgreSQL.
