@@ -67,29 +67,37 @@ SQL queries are executed using SQLAlchemy’s execute() method.
 
 Install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
 Set database environment variable (PowerShell example):
 
+```bash
 $env:DATABASE_URL="postgresql://postgres:<password>@localhost/<dbname>"
+```
 
 Set Gemini API key:
 
+```bash
 $env:GEMINI_API_KEY="<your_api_key>"
+```
 
 Import book data:
 
+```bash
 python import.py
+```
 
 Run the application:
 
+```bash
 python -m flask --app application run
+```
 
 Open in browser:
 
 http://127.0.0.1:5000
-
----
 
 ## Notes
 
